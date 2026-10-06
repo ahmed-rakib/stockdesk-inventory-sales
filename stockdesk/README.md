@@ -8,7 +8,6 @@ Built with **Python, FastAPI, SQLAlchemy, and a responsive HTML/CSS/JavaScript i
 
 The screenshot uses fictional demo data. Its balances include sample transactions performed during browser testing.
 
-**বাংলায় setup guide:** [START_HERE_BN.md](START_HERE_BN.md)
 
 ## Features
 
@@ -102,141 +101,7 @@ Administrators can cancel an unpaid invoice to restore stock. Invoices with reco
 
 The MySQL implementation uses row locks for stock and invoice updates. The SQLite demo serializes database transactions because SQLite does not provide equivalent row-level locks.
 
-## Access roles
 
-| Role | Permissions |
-| --- | --- |
-| Staff | View products/suppliers, maintain customers, receive stock, create invoices, record payments, and view/export reports |
-| Administrator | All staff operations plus product/supplier maintenance, stock adjustments, unpaid invoice cancellation, user creation, and activity-log access |
-
-Passwords use salted PBKDF2-SHA256 hashing. Authentication uses an HttpOnly, SameSite Strict session cookie with an eight-hour expiry. Mutations require a CSRF token.
-
-## MySQL setup
-
-### Docker Compose
-
-Start Docker's Linux engine. Copy `.env.example` to `.env`, then add:
-
-```dotenv
-MYSQL_PASSWORD=your_database_password
-MYSQL_ROOT_PASSWORD=your_root_password
-APP_ADMIN_PASSWORD=your_admin_password
-```
-
-Choose an administrator password with at least ten characters. Use letters, digits, and underscores for the database passwords in this example; special characters in a manually composed connection URL must be URL-encoded.
-
-```bash
-docker compose up --build -d
-docker compose logs -f web
-```
-
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Compose initializes the application after MySQL passes its health check. Data persists in the `mysql_data` volume. Stop the services while retaining data with:
-
-```bash
-docker compose down
-```
-
-### Existing MySQL server
-
-Create a database and dedicated account:
-
-```sql
-CREATE DATABASE stockdesk CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'stockdesk'@'localhost' IDENTIFIED BY 'your_password';
-GRANT ALL PRIVILEGES ON stockdesk.* TO 'stockdesk'@'localhost';
-```
-
-Set the connection in `.env`, then run the initializer and server using the quick-start commands:
-
-```dotenv
-DATABASE_URL=mysql+pymysql://stockdesk:your_password@127.0.0.1:3306/stockdesk?charset=utf8mb4
-APP_ADMIN_PASSWORD=your_admin_password
-```
-
-Tables are created during initialization/startup. Schema migrations are outside the current scope.
-
-## API reference
-
-Interactive documentation: **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**. Swagger UI assets require internet; the main application does not.
-
-| Routes | Purpose |
-| --- | --- |
-| `/api/auth/login`, `/api/auth/me`, `/api/auth/logout` | Login, session details, and logout |
-| `/api/products`, `/api/products/{id}` | List, create, and update products |
-| `/api/customers`, `/api/customers/{id}` | Customer records |
-| `/api/suppliers`, `/api/suppliers/{id}` | Supplier records |
-| `/api/stock/receive`, `/api/stock/adjust`, `/api/stock/movements` | Receipts, corrections, and stock history |
-| `/api/invoices`, `/api/invoices/{id}` | Invoice creation, listing, and details |
-| `/api/invoices/{id}/payments`, `/api/invoices/{id}/cancel` | Payment recording and cancellation |
-| `/api/dashboard`, `/api/reports/{kind}`, `/api/export/{kind}.csv` | Dashboard, reports, and exports |
-| `/api/users`, `/api/audit` | Team access and activity log |
-| `/health` | Application/database health |
-
-Report kinds are `sales`, `inventory`, and `receivables`. Sales/receivables accept `start` and `end` query parameters in `YYYY-MM-DD` format.
-
-For API mutations, include the session cookie and the `X-CSRF-Token` returned by login or `/api/auth/me`. Output fields ending in `_cents` are integer poisha: `10050` represents **BDT 100.50**. CSV monetary columns ending in `_bdt` contain decimal BDT values.
-
-## Tests and verification
-
-Run the automated suite from the repository root:
-
-```powershell
-# Windows
-.venv\Scripts\python.exe -m unittest discover -s tests -v
-```
-
-```bash
-# macOS / Linux
-.venv/bin/python -m unittest discover -s tests -v
-```
-
-The suite uses a separate SQLite test database and checks authentication, permissions, validation, rollback, concurrent sales, invoice arithmetic, payment limits, cancellation, retry handling, historical snapshots, reports, and CSV safety.
-
-| Verification | Result |
-| --- | --- |
-| Automated SQLite workflow tests | 22 passed |
-| Browser invoice/payment workflow | Verified |
-| Desktop/mobile interface checks | Verified |
-| JavaScript syntax check | Passed |
-| MySQL schema compilation | All 10 tables compiled |
-| Live MySQL transactions / Docker startup | Not executed |
-
-Live MySQL/Docker execution and a clean-machine launcher installation remain unverified. See the [verification record](docs/VERIFICATION.md) for the tested environment and detailed evidence.
-
-## Project structure
-
-```text
-stockdesk/
-├── app/
-│   ├── db.py              # Database engine and transaction lifecycle
-│   ├── models.py          # Database schema and relationships
-│   ├── schemas.py         # Request validation
-│   ├── security.py        # Passwords, sessions, CSRF, and roles
-│   ├── services.py        # Stock, invoice, payment, and cancellation rules
-│   ├── main.py            # API routes, reports, and frontend serving
-│   ├── seed.py            # Fictional demo initialization
-│   └── static/            # HTML, CSS, and JavaScript interface
-├── tests/                 # Automated workflow tests
-├── docs/                  # Requirements, architecture, SQL, and support guides
-├── .env.example           # Configuration template
-├── requirements.txt       # Supported dependency ranges
-├── requirements.lock.txt  # Exact versions used during verification
-├── run.bat                # Windows launcher
-├── run.sh                 # macOS/Linux launcher
-├── Dockerfile
-├── compose.yaml
-└── START_HERE_BN.md        # Bengali setup guide
-```
-
-## Documentation
-
-- [Business requirements](docs/REQUIREMENTS.md)
-- [Architecture and database ERD](docs/ARCHITECTURE.md)
-- [User guide and demonstration](docs/USER_GUIDE.md)
-- [Manual acceptance test cases](docs/TEST_CASES.md)
-- [Support investigation playbook](docs/SUPPORT_PLAYBOOK.md)
-- [SQL practice queries](docs/SQL_EXAMPLES.sql)
-- [Verification record](docs/VERIFICATION.md)
 
 ## Project scope
 
