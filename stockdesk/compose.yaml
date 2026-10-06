@@ -1,0 +1,28 @@
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: stockdesk
+      MYSQL_USER: stockdesk
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env before using Docker}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env before using Docker}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+  web:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      DATABASE_URL: mysql+pymysql://stockdesk:${MYSQL_PASSWORD}@db:3306/stockdesk?charset=utf8mb4
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-DemoPass123!}
+      COOKIE_SECURE: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  mysql_data:
