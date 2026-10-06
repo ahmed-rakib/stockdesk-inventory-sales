@@ -1,4 +1,4 @@
-# StockDesk — Inventory & Sales Management
+# StockDesk - Inventory & Sales Management
 
 A web application for managing products, stock movements, sales invoices, and customer payments. StockDesk helps a small business trace inventory changes, track outstanding balances, and export reports for Excel.
 
